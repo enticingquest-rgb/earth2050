@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EARTH 2050: Environmental Chemistry</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        neon: '#00ff88',
+                        dark: '#050505',
+                        surface: '#111111',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { background-color: #050505; color: #ffffff; overflow-x: hidden; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00ff88; }
+
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(30,30,30,0.6) 0%, rgba(10,10,10,0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Neon Glows */
+        .glow-text { text-shadow: 0 0 15px rgba(0, 255, 136, 0.5); }
+
+        /* Scroll Progress */
+        #scroll-progress {
+            position: fixed; top: 0; left: 0; height: 3px; background: #00ff88;
+            width: 0%; z-index: 9999; transition: width 0.1s ease;
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        /* Reveal Animation */
+        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+
+        /* Hero Earth Animation */
+        .earth-container {
+            width: 300px; height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #1e3a8a 0%, #020617 80%);
+            box-shadow: 
+                inset -20px -20px 50px rgba(0,0,0,0.9),
+                inset 10px 10px 30px rgba(255,255,255,0.2),
+                0 0 50px rgba(0, 255, 136, 0.2);
+            position: relative;
+            overflow: hidden;
+            animation: float 6s ease-in-out infinite;
+        }
+        .earth-texture {
+            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.3" fill="%2300ff88"/></svg>');
+            animation: rotate 60s linear infinite;
+            opacity: 0.4;
+            mix-blend-mode: overlay;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* Shake Animation for Vault */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        .animate-shake { animation: shake 0.3s ease-in-out 2; }
+        
+        /* Custom Range Slider */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #00ff88; cursor: pointer; margin-top: -8px; box-shadow: 0 0 10px #00ff88; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(255,255,255,0.2); border-radius: 2px; }
+
+        /* Molecule Transitions */
+        .mol-anim { transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s, color 0.3s; }
+    </style>
+</head>
+<body class="antialiased selection:bg-neon selection:text-dark">
+
+    <div id="scroll-progress"></div>
+
+    <!-- Top Navigation / Identity -->
+    <nav class="fixed top-0 w-full z-50 glass border-b-0 px-6 py-4 flex justify-between items-center transition-all duration-300" id="navbar">
+        <div class="font-display font-bold text-xl tracking-widest flex items-center gap-2">
+            <i class="fa-solid fa-flask text-neon"></i> EARTH<span class="text-white/50">2050</span>
+        </div>
+        <div class="flex gap-4 items-center font-mono text-sm text-gray-400">
+            <span>SYS_TERMINAL_V1</span>
+        </div>
+    </nav>
+
+    <!-- 1. Hero Section -->
+    <section class="min-h-screen flex flex-col items-center justify-center relative overflow-hidden pt-20">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neon/5 via-dark to-dark -z-10"></div>
+        
+        <div class="earth-container mb-12">
+            <div class="earth-texture"></div>
+        </div>
+
+        <h1 class="font-display text-5xl md:text-7xl font-bold tracking-tighter mb-4 text-center">
+            CHEMISTRY OF <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-neon to-blue-400 glow-text">OUR ENVIRONMENT</span>
+        </h1>
+        
+        <div class="mb-12 text-center z-10">
+            <p class="text-lg md:text-xl font-mono text-gray-300">
+                Website created by 
+                <span class="text-neon font-bold border-b-2 border-neon/50 px-3 py-1 bg-neon/10 rounded-lg transition-colors inline-block mt-2 md:mt-0 shadow-[0_0_15px_rgba(0,255,136,0.2)]">
+                    Medha Lakshimi
+                </span>
+            </p>
+        </div>
+
+        <p class="text-neon text-sm md:text-lg max-w-2xl text-center font-mono mb-12 px-4 uppercase tracking-widest">
+            Simulation Terminal Active. Accessing environmental data archives.
+        </p>
+
+        <div class="absolute bottom-10 flex flex-col items-center animate-bounce">
+            <span class="text-xs uppercase tracking-widest text-gray-500 mb-2 font-mono">Run Diagnostics</span>
+            <i class="fa-solid fa-chevron-down text-neon"></i>
+        </div>
+    </section>
+
+    <!-- 1.5 Classified Vault Section -->
+    <section class="py-12 px-6 max-w-4xl mx-auto reveal" id="vault-section">
+        <div class="glass-panel p-8 md:p-12 rounded-3xl border border-white/10 relative overflow-hidden transition-all duration-500" id="vault-container">
+            <!-- Locked State -->
+            <div id="vault-locked" class="text-center transition-opacity duration-300">
+                <i class="fa-solid fa-lock text-4xl text-gray-500 mb-4"></i>
+                <h2 class="font-display text-2xl md:text-3xl font-bold mb-2">Classified Data Vault</h2>
+                <p class="text-gray-400 font-mono text-sm mb-8">Enter clearance code to access the 2050 Green Chemistry Report.</p>
+                
+                <div class="max-w-xs mx-auto">
+                    <input type="password" id="inline-vault-input" class="w-full bg-dark border border-white/20 rounded-lg p-3 text-center tracking-[0.5em] font-mono text-neon focus:outline-none focus:border-neon mb-2 transition-colors" placeholder="PASSCODE">
+                    <p id="vault-error" class="text-red-500 font-mono text-xs h-4 mb-4 opacity-0 transition-opacity">Access Denied. Invalid Authorization.</p>
+                    <button onclick="unlockInlineVault()" class="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-neon transition-colors">UNLOCK SECURE FILE</button>
+                </div>
+            </div>
+
+            <!-- Unlocked State (Hidden initially) -->
+            <div id="vault-unlocked" class="hidden text-left opacity-0 transition-opacity duration-500">
+                <div class="flex items-center justify-between border-b border-white/10 pb-6 mb-6">
+                    <div class="flex items-center gap-4">
+                        <i class="fa-solid fa-radiation text-4xl text-neon"></i>
+                        <div>
+                            <h2 class="font-mono text-xl md:text-2xl text-white tracking-widest">CLASSIFIED 2050 REPORT</h2>
+                            <p class="text-neon text-xs md:text-sm font-mono mt-1">SUBJECT: SYNTHETIC CARBON CAPTURE</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-unlock-keyhole text-neon text-3xl opacity-50"></i>
+                </div>
+
+                <div class="space-y-6 text-gray-300 leading-relaxed text-sm md:text-base">
+                    <p><strong class="text-white">Directive Summary:</strong> Traditional afforestation parameters have proven insufficient for rapid atmospheric stabilization. The Earth 2050 initiative relies heavily on Direct Air Capture (DAC) utilizing advanced amine-functionalized Metal-Organic Frameworks (MOFs).</p>
+                    <div class="bg-black/50 p-6 rounded-lg border border-white/5 border-l-4 border-l-neon shadow-inner">
+                        <p class="text-xs text-neon font-mono mb-2 tracking-wider">CHEMISTRY MECHANISM</p>
+                        <p>MOFs act as molecular sponges. The amine groups chemically bind to CO₂ molecules from the ambient air at concentrations as low as 400ppm, physically separating them from unreactive N₂ and O₂.</p>
+                    </div>
+                    <p>Once captured, thermal shifting (heating the MOFs) releases pure CO₂. This byproduct is then combined with green hydrogen (derived via solar electrolysis) to synthesize sustainable aviation fuels and carbon-negative plastics, effectively closing the carbon loop globally.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Atmospheric pH Simulator -->
+    <section class="py-24 px-6 max-w-6xl mx-auto reveal">
+        <div class="flex items-center gap-4 mb-12">
+            <div class="w-12 h-12 rounded-full bg-neon/10 flex items-center justify-center border border-neon/30">
+                <i class="fa-solid fa-cloud-showers-water text-neon text-xl"></i>
+            </div>
+            <div>
+                <h2 class="font-display text-3xl font-bold">Atmospheric pH Simulator</h2>
+                <p class="text-gray-400 font-mono text-sm">ENVIRONMENTAL ACIDIFICATION PROTOCOL</p>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-12 items-center glass-panel rounded-3xl p-8">
+            <div class="space-y-8">
+                <p class="text-gray-300">
+                    Adjust the industrial emissions slider below to simulate the release of Sulfur Dioxide (SO₂) and Nitrogen Oxides (NOₓ) into the atmosphere. Observe the direct chemical impact on precipitation pH and aquatic ecosystems.
+                </p>
+                <div>
+                    <div class="flex justify-between font-mono text-sm mb-2 text-gray-400">
+                        <span>SO₂ / NOₓ Concentration</span>
+                        <span class="text-white">MAX</span>
+                    </div>
+                    <input type="range" min="0" max="100" value="0" id="ph-slider">
+                </div>
+                
+                <div class="glass p-6 rounded-xl border-l-4 border-l-neon">
+                    <p class="font-mono text-sm text-neon mb-2">CHEMICAL REACTION</p>
+                    <p class="font-mono text-sm text-gray-300">
+                        <span class="text-white text-lg">SO<sub>2</sub> + H<sub>2</sub>O &rarr; H<sub>2</sub>SO<sub>3</sub></span>
+                    </p>
+                    <p class="text-xs text-gray-400 mt-2">Sulfur dioxide reacts with atmospheric moisture to form sulfurous acid, dangerously lowering the pH of rainfall.</p>
+                </div>
+            </div>
+
+            <div class="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-900 border border-white/10 flex flex-col justify-end">
+                <!-- Data Overlay -->
+                <div class="absolute top-6 left-6 z-10 glass p-4 rounded-xl border border-white/10">
+                    <p class="font-mono text-xs text-gray-400 mb-1">CURRENT pH LEVEL</p>
+                    <p class="font-display text-5xl font-bold text-neon transition-colors duration-300" id="ph-value">7.0</p>
+                </div>
+                
+                <!-- Lake Graphic -->
+                <div id="lake-graphic" class="w-full h-3/5 bg-blue-500 transition-colors duration-500 ease-in-out relative border-t border-white/10 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <i class="fa-solid fa-fish text-white/30 text-6xl absolute z-0"></i>
+                </div>
+                <!-- Soil -->
+                <div class="w-full h-1/5 bg-amber-900/40 border-t border-white/10"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. The Catalytic Chamber -->
+    <section class="py-24 px-6 max-w-6xl mx-auto reveal">
+        <div class="flex items-center gap-4 mb-12 justify-end text-right">
+            <div>
+                <h2 class="font-display text-3xl font-bold">The Catalytic Chamber</h2>
+                <p class="text-gray-400 font-mono text-sm">REDOX REACTIONS OVER TRANSITION METALS</p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-neon/10 flex items-center justify-center border border-neon/30">
+                <i class="fa-solid fa-car-rear text-neon text-xl"></i>
+            </div>
+        </div>
+
+        <div class="glass-panel rounded-3xl p-8 md:p-12 text-center overflow-hidden relative">
+            
+            <p class="text-gray-400 mb-12 max-w-2xl mx-auto">
+                Vehicular exhaust contains toxic Carbon Monoxide (CO) and Nitrogen Oxides (NO). Using a Platinum/Palladium catalyst, these are converted into harmless gases via redox reactions.
+            </p>
+
+            <div class="relative h-48 w-full max-w-3xl mx-auto flex items-center justify-between mb-8">
+                
+                <!-- Input Toxins -->
+                <div class="flex flex-col gap-4 z-10">
+                    <div id="mol-co" class="mol-anim w-16 h-16 rounded-full bg-red-500/20 border border-red-500 flex items-center justify-center font-bold text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)]">CO</div>
+                    <div id="mol-no" class="mol-anim w-16 h-16 rounded-full bg-red-500/20 border border-red-500 flex items-center justify-center font-bold text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.3)]">NO</div>
+                </div>
+
+                <!-- Catalyst Grid -->
+                <div id="catalyst-grid" class="absolute left-1/2 -translate-x-1/2 w-48 h-full bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%,transparent_100%)] bg-[length:10px_10px] border border-white/20 rounded-xl transition-shadow duration-300 flex items-center justify-center glass">
+                    <span class="font-mono text-neon font-bold tracking-widest uppercase opacity-50">Pt / Pd / Rh</span>
+                </div>
+
+                <!-- Output Sink (Visual only, molecules move past the grid) -->
+                <div class="w-16 h-full opacity-0"></div> 
+            </div>
+
+            <button id="catalyst-btn" onclick="runCatalysis()" class="bg-neon/10 hover:bg-neon/20 text-neon border border-neon/50 px-8 py-3 rounded-lg font-mono text-sm transition-all shadow-[0_0_15px_rgba(0,255,136,0.2)]">
+                Initiate Catalysis
+            </button>
+            
+            <div class="mt-8 text-center bg-black/40 py-4 px-6 rounded-xl font-mono text-lg border border-white/10 inline-block">
+                2CO + 2NO &rarr; 2CO<sub>2</sub> + N<sub>2</sub>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Chemical Water Testing -->
+    <section class="py-24 px-6 max-w-6xl mx-auto reveal">
+        <div class="flex items-center gap-4 mb-12">
+            <div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/30">
+                <i class="fa-solid fa-flask-vial text-blue-400 text-xl"></i>
+            </div>
+            <div>
+                <h2 class="font-display text-3xl font-bold">Chemical Water Testing</h2>
+                <p class="text-gray-400 font-mono text-sm">DIGITAL LAB BENCH IDENTIFICATION</p>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Cobalt Test -->
+            <div class="glass-panel p-8 rounded-3xl flex flex-col items-center justify-center text-center">
+                <h3 class="font-display text-xl mb-2">Cobalt(II) Chloride</h3>
+                <p class="text-xs text-gray-400 font-mono mb-8">TEST FOR H₂O PRESENCE</p>
+                
+                <div id="cobalt-dish" class="w-32 h-32 rounded-full bg-blue-500 border-4 border-white/10 shadow-inner transition-all duration-700 mb-8 relative flex items-center justify-center">
+                    <div class="absolute inset-2 rounded-full bg-black/20 mix-blend-overlay"></div>
+                </div>
+
+                <button onclick="testCobalt()" class="border border-white/20 px-6 py-2 rounded font-mono text-sm hover:bg-white/10 transition-colors">
+                    Add H₂O
+                </button>
+                <p class="text-xs font-mono mt-4 text-gray-500">CoCl₂ + 6H₂O &rarr; CoCl₂·6H₂O</p>
+                <p class="text-sm mt-2 text-gray-400">Anhydrous (Blue) &rarr; Hydrated (Pink)</p>
+            </div>
+
+            <!-- Copper Test -->
+            <div class="glass-panel p-8 rounded-3xl flex flex-col items-center justify-center text-center">
+                <h3 class="font-display text-xl mb-2">Copper(II) Sulfate</h3>
+                <p class="text-xs text-gray-400 font-mono mb-8">TEST FOR H₂O PRESENCE</p>
+                
+                <div id="copper-dish" class="w-32 h-32 rounded-full bg-slate-100 border-4 border-white/10 shadow-inner transition-all duration-700 mb-8 relative flex items-center justify-center">
+                     <div class="absolute inset-2 rounded-full bg-black/10 mix-blend-overlay"></div>
+                </div>
+
+                <button onclick="testCopper()" class="border border-white/20 px-6 py-2 rounded font-mono text-sm hover:bg-white/10 transition-colors">
+                    Add H₂O
+                </button>
+                <p class="text-xs font-mono mt-4 text-gray-500">CuSO₄ + 5H₂O &rarr; CuSO₄·5H₂O</p>
+                <p class="text-sm mt-2 text-gray-400">Anhydrous (White) &rarr; Hydrated (Blue)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Quiz System -->
+    <section class="py-24 px-6 max-w-4xl mx-auto reveal">
+        <div class="text-center mb-12">
+            <h2 class="font-display text-3xl font-bold">Knowledge Verification</h2>
+            <p class="text-gray-400 font-mono text-sm mt-2">REAL-TIME DATA EVALUATION</p>
+        </div>
+
+        <div class="glass-panel p-8 rounded-3xl" id="quiz-container">
+            <!-- Q1 -->
+            <div class="quiz-q block" id="q1">
+                <h3 class="text-xl mb-6 font-bold">1. Which gas is responsible for photochemical smog and acid rain, originating from high-temperature car engines?</h3>
+                <div class="space-y-3" id="q1-options">
+                    <button data-correct="false" onclick="selectAnswer(1, this, false)" class="w-full text-left p-4 glass rounded-lg border border-transparent transition-colors hover:border-white/20 font-bold">Carbon Monoxide</button>
+                    <button data-correct="true" onclick="selectAnswer(1, this, true)" class="w-full text-left p-4 glass rounded-lg border border-transparent transition-colors hover:border-white/20 font-bold">Nitrogen Oxides (NOx)</button>
+                    <button data-correct="false" onclick="selectAnswer(1, this, false)" class="w-full text-left p-4 glass rounded-lg border border-transparent transition-colors hover:border-white/20 font-bold">Methane</button>
+                </div>
+                <button id="q1-next" onclick="nextQ(1)" class="mt-8 bg-white text-black px-6 py-2 rounded font-bold hover:bg-gray-200 transition-colors hidden">Next <i class="fa-solid fa-arrow-right ml-2"></i></button>
+            </div>
+
+            <!-- Q2 -->
+            <div class="quiz-q hidden" id="q2">
+                <h3 class="text-xl mb-6 font-bold">2. Why are nitrates and phosphates harmful when they runoff into river systems?</h3>
+                <div class="space-y-3" id="q2-options">
+                    <button data-correct="false" onclick="selectAnswer(2, this, false)" class="w-full text-left p-4 glass rounded-lg border border-transparent transition-colors hover:border-white/20 font-bold">They make the water highly acidic, dissolving limestone.</button>
+                    <button data-correct="false" onclick="selectAnswer(2, this, false)" class="w-full text-left p-4 glass rounded-lg border border-transparent transition-colors hover:border-white/20 font-bold">They cause heavy metal poisoning in fish.</button>
+                    <button data-correct="true" onclick="selectAnswer(2, this, true)" class="w-full text-left p-4 glass rounded-lg border border-transparent transition-colors hover:border-white/20 font-bold">They cause algal blooms, leading to hypoxia and eutrophication.</button>
+                </div>
+                <button id="q2-next" onclick="nextQ(2)" class="mt-8 bg-white text-black px-6 py-2 rounded font-bold hover:bg-gray-200 transition-colors hidden">Next <i class="fa-solid fa-arrow-right ml-2"></i></button>
+            </div>
+
+            <!-- Q3 -->
+            <div class="quiz-q hidden" id="q3">
+                <h3 class="text-xl mb-6 font-bold">3. What color change indicates the presence of water when using Anhydrous Cobalt(II) Chloride?</h3>
+                <div class="space-y-3" id="q3-options">
+                    <button data-correct="true" onclick="selectAnswer(3, this, true)" class="w-full text-left p-4 glass rounded-lg border border-transparent transition-colors hover:border-white/20 font-bold">Blue to Pink</button>
+                    <button data-correct="false" onclick="selectAnswer(3, this, false)" class="w-full text-left p-4 glass rounded-lg border border-transparent transition-colors hover:border-white/20 font-bold">White to Blue</button>
+                    <button data-correct="false" onclick="selectAnswer(3, this, false)" class="w-full text-left p-4 glass rounded-lg border border-transparent transition-colors hover:border-white/20 font-bold">Colorless to Cloudy</button>
+                </div>
+                <button id="q3-next" onclick="showResults()" class="mt-8 bg-neon text-black px-6 py-2 rounded font-bold hover:bg-green-400 transition-colors hidden">Complete Scan <i class="fa-solid fa-check ml-2"></i></button>
+            </div>
+
+            <!-- Results -->
+            <div id="quiz-results" class="hidden text-center py-8">
+                <i class="fa-solid fa-shield-check text-6xl text-neon mb-4"></i>
+                <h3 class="text-3xl font-display font-bold mb-2">Scan Complete</h3>
+                <p class="text-gray-400 font-mono text-lg">Knowledge successfully verified.</p>
+                <button onclick="location.reload()" class="mt-6 border border-white/20 px-6 py-2 rounded font-bold hover:bg-white/5 transition-colors">Re-Initialize Terminal</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer & Hidden Vault -->
+    <footer class="border-t border-white/10 mt-12 py-12 text-center relative overflow-hidden">
+        <div class="font-display font-bold text-2xl tracking-widest mb-4">
+            <i class="fa-solid fa-flask text-neon"></i> EARTH<span class="text-white/50">2050</span>
+        </div>
+        <p class="text-gray-600 font-mono text-xs">EARTH 2050 PROTOCOL &copy; 2026 | ENVIRONMENTAL INVESTIGATION</p>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Scroll Progress & Reveal Animations
+        const progressBar = document.getElementById('scroll-progress');
+        const navbar = document.getElementById('navbar');
+        
+        window.addEventListener('scroll', () => {
+            let scrollTop = window.scrollY;
+            let docHeight = document.body.offsetHeight - window.innerHeight;
+            let scrollPercent = (scrollTop / docHeight) * 100;
+            progressBar.style.width = scrollPercent + '%';
+
+            if (scrollTop > 50) {
+                navbar.classList.add('bg-dark/80', 'border-b', 'border-white/10');
+            } else {
+                navbar.classList.remove('bg-dark/80', 'border-b', 'border-white/10');
+            }
+        });
+
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // 1. Atmospheric pH Simulator
+        const phSlider = document.getElementById('ph-slider');
+        const phValue = document.getElementById('ph-value');
+        const lakeGraphic = document.getElementById('lake-graphic');
+        
+        phSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            // Map 0-100 to pH 7.0 - 4.0
+            const ph = 7.0 - (val * 3.0 / 100);
+            phValue.innerText = ph.toFixed(1);
+            
+            // Map color from Blue (210 hue) to Yellow-Green (approx 70 hue)
+            const hue = 210 - (val * 1.4); 
+            lakeGraphic.style.backgroundColor = `hsl(${hue}, 80%, 40%)`;
+            
+            if (ph < 5.0) {
+                phValue.classList.add('text-red-500');
+                phValue.classList.remove('text-neon');
+            } else {
+                phValue.classList.add('text-neon');
+                phValue.classList.remove('text-red-500');
+            }
+        });
+
+        // 2. Catalytic Chamber
+        function runCatalysis() {
+            const co = document.getElementById('mol-co');
+            const no = document.getElementById('mol-no');
+            const grid = document.getElementById('catalyst-grid');
+            const btn = document.getElementById('catalyst-btn');
+            
+            if(btn.disabled) return;
+            btn.disabled = true;
+            
+            // Move to grid
+            co.style.transform = "translateX(120px) scale(0.8)";
+            no.style.transform = "translateX(120px) scale(0.8)";
+            grid.classList.add('shadow-[0_0_30px_#00ff88]');
+            
+            // Transform molecules
+            setTimeout(() => {
+                co.innerText = "CO₂";
+                no.innerText = "N₂";
+                co.classList.replace('bg-red-500/20', 'bg-neon/20');
+                co.classList.replace('text-red-400', 'text-neon');
+                co.classList.replace('border-red-500', 'border-neon');
+                
+                no.classList.replace('bg-red-500/20', 'bg-neon/20');
+                no.classList.replace('text-red-400', 'text-neon');
+                no.classList.replace('border-red-500', 'border-neon');
+                
+                // Move out
+                setTimeout(() => {
+                    co.style.transform = "translateX(250px) scale(1)";
+                    no.style.transform = "translateX(250px) scale(1)";
+                    grid.classList.remove('shadow-[0_0_30px_#00ff88]');
+                    
+                    // Reset
+                    setTimeout(() => {
+                        co.style.transform = "translateX(0) scale(1)";
+                        no.style.transform = "translateX(0) scale(1)";
+                        
+                        setTimeout(() => {
+                            co.innerText = "CO";
+                            no.innerText = "NO";
+                            co.classList.replace('bg-neon/20', 'bg-red-500/20');
+                            co.classList.replace('text-neon', 'text-red-400');
+                            co.classList.replace('border-neon', 'border-red-500');
+                            
+                            no.classList.replace('bg-neon/20', 'bg-red-500/20');
+                            no.classList.replace('text-neon', 'text-red-400');
+                            no.classList.replace('border-neon', 'border-red-500');
+                            
+                            btn.disabled = false;
+                        }, 500); // Wait for transition back
+                    }, 1200);
+                }, 500);
+            }, 800);
+        }
+
+        // 3. Chemical Water Testing
+        function testCobalt() {
+            const dish = document.getElementById('cobalt-dish');
+            dish.style.backgroundColor = '#ec4899'; // Pink
+            dish.style.boxShadow = '0 0 30px #ec4899';
+            setTimeout(() => {
+                dish.style.backgroundColor = '#3b82f6'; // Blue
+                dish.style.boxShadow = 'none';
+            }, 3000);
+        }
+        function testCopper() {
+            const dish = document.getElementById('copper-dish');
+            dish.style.backgroundColor = '#3b82f6'; // Blue
+            dish.style.boxShadow = '0 0 30px #3b82f6';
+            setTimeout(() => {
+                dish.style.backgroundColor = '#f8fafc'; // White
+                dish.style.boxShadow = 'none';
+            }, 3000);
+        }
+
+        // 4. Quiz Logic with Immediate Feedback
+        function selectAnswer(qNum, btnElement, isCorrect) {
+            const optionsContainer = document.getElementById(`q${qNum}-options`);
+            const allButtons = optionsContainer.querySelectorAll('button');
+            
+            // Disable all buttons and reveal correct answer
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('hover:border-white/20');
+                btn.classList.add('cursor-not-allowed');
+                
+                // Dim all initially
+                btn.classList.add('opacity-40');
+                
+                // If this is the correct answer, highlight it in green regardless of user choice
+                if (btn.getAttribute('data-correct') === 'true') {
+                    btn.classList.remove('opacity-40');
+                    btn.classList.add('bg-green-500/20', 'border-green-500', 'text-green-400');
+                }
+            });
+
+            // If user clicked the wrong answer, highlight their choice in red
+            if (!isCorrect) {
+                btnElement.classList.remove('opacity-40');
+                btnElement.classList.add('bg-red-500/20', 'border-red-500', 'text-red-400');
+            }
+
+            // Show next button
+            document.getElementById(`q${qNum}-next`).classList.remove('hidden');
+        }
+
+        function nextQ(current) {
+            document.getElementById(`q${current}`).classList.add('hidden');
+            document.getElementById(`q${current+1}`).classList.remove('hidden');
+            document.getElementById(`q${current+1}`).classList.add('block');
+        }
+
+        function showResults() {
+            document.getElementById('q3').classList.add('hidden');
+            document.getElementById('quiz-results').classList.remove('hidden');
+        }
+
+        // 5. Inline Vault Logic
+        const vaultContainer = document.getElementById('vault-container');
+        const vaultLocked = document.getElementById('vault-locked');
+        const vaultUnlocked = document.getElementById('vault-unlocked');
+        const vaultInput = document.getElementById('inline-vault-input');
+        const vaultError = document.getElementById('vault-error');
+
+        function unlockInlineVault() {
+            const code = vaultInput.value.trim().toLowerCase();
+            
+            // Checks for 'chem2050' (case insensitive due to toLowerCase above)
+            if (code === 'chem2050') {
+                // Success: Hide locked state, show unlocked report
+                vaultLocked.style.opacity = '0';
+                setTimeout(() => {
+                    vaultLocked.classList.add('hidden');
+                    vaultUnlocked.classList.remove('hidden');
+                    
+                    // Small delay to trigger CSS fade-in
+                    setTimeout(() => {
+                        vaultUnlocked.style.opacity = '1';
+                        vaultContainer.classList.add('border-neon/50', 'shadow-[0_0_30px_rgba(0,255,136,0.1)]');
+                    }, 50);
+                }, 300);
+            } else {
+                // Error: Trigger shake animation and red text
+                vaultInput.value = '';
+                
+                // Reset animation by triggering reflow
+                vaultContainer.classList.remove('animate-shake');
+                void vaultContainer.offsetWidth; 
+                vaultContainer.classList.add('animate-shake');
+                
+                // Show Error visuals
+                vaultInput.classList.remove('border-white/20');
+                vaultInput.classList.add('border-red-500');
+                vaultError.style.opacity = '1';
+                
+                // Reset error visuals after a moment
+                setTimeout(() => {
+                    vaultInput.classList.add('border-white/20');
+                    vaultInput.classList.remove('border-red-500');
+                    vaultError.style.opacity = '0';
+                }, 1500);
+            }
+        }
+
+        // Allow Enter key to submit vault passcode
+        if(vaultInput) {
+            vaultInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') unlockInlineVault();
+            });
+        }
+
+    </script>
+</body>
+</html>
